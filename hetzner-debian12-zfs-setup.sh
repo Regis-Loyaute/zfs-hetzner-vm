@@ -43,7 +43,7 @@ c_deb_security_repo=https://deb.debian.org/debian-security
 c_default_zfs_arc_max_mb=250
 c_default_bpool_tweaks="-o ashift=12 -O compression=lz4"
 c_default_rpool_tweaks="-o ashift=12 -O acltype=posixacl -O compression=zstd-9 -O dnodesize=auto -O relatime=on -O xattr=sa -O normalization=formD"
-c_default_hostname=terem
+c_default_hostname=pve-test
 c_zfs_mount_dir=/mnt
 c_log_dir=$(dirname "$(mktemp)")/zfs-hetzner-vm
 c_install_log=$c_log_dir/install.log
@@ -496,21 +496,21 @@ done
 
 echo "======= installing zfs on rescue system =========="
 
-  echo "zfs-dkms zfs-dkms/note-incompatible-licenses note true" | debconf-set-selections  
+ # echo "zfs-dkms zfs-dkms/note-incompatible-licenses note true" | debconf-set-selections  
 #  echo "y" | zfs
 # linux-headers-generic linux-image-generic
-  apt install --yes software-properties-common dpkg-dev dkms
-  rm -f "$(which zfs)"
-  rm -f "$(which zpool)"
-  echo -e "deb http://deb.debian.org/debian/ testing main contrib non-free\ndeb http://deb.debian.org/debian/ testing main contrib non-free\n" >/etc/apt/sources.list.d/bookworm-testing.list
-  echo -e "Package: src:zfs-linux\nPin: release n=testing\nPin-Priority: 990\n" > /etc/apt/preferences.d/90_zfs
-  apt update  
-  apt install -t testing --yes zfs-dkms zfsutils-linux
-  rm /etc/apt/sources.list.d/bookworm-testing.list
-  rm /etc/apt/preferences.d/90_zfs
-  apt update
-  export PATH=$PATH:/usr/sbin
-  zfs --version
+ # apt install --yes software-properties-common dpkg-dev dkms
+ # rm -f "$(which zfs)"
+ # rm -f "$(which zpool)"
+ # echo -e "deb http://deb.debian.org/debian/ testing main contrib non-free\ndeb http://deb.debian.org/debian/ testing main contrib non-free\n" >/etc/apt/sources.list.d/bookworm-testing.list
+ # echo -e "Package: src:zfs-linux\nPin: release n=testing\nPin-Priority: 990\n" > /etc/apt/preferences.d/90_zfs
+ # apt update  
+ # apt install -t testing --yes zfs-dkms zfsutils-linux
+ # rm /etc/apt/sources.list.d/bookworm-testing.list
+ # rm /etc/apt/preferences.d/90_zfs
+ # apt update
+ # export PATH=$PATH:/usr/sbin
+ # zfs --version
 
 echo "======= partitioning the disk =========="
 
@@ -556,6 +556,11 @@ echo "======= create zfs pools and datasets =========="
 # shellcheck disable=SC2086
 zpool create \
   $v_bpool_tweaks -O canmount=off -O devices=off \
+  -o compatibility=grub2 \
+  -o autotrim=on \
+  -O normalization=formD \
+  -O relatime=on \
+  -O acltype=posixacl -O xattr=sa \
   -o cachefile=/etc/zpool.cache \
   -O mountpoint=/boot -R $c_zfs_mount_dir -f \
   $v_bpool_name $pools_mirror_option "${bpool_disks_partitions[@]}"
