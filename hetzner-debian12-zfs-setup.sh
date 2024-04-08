@@ -2,7 +2,7 @@
 
 : <<'end_header_info'
 (c) Andrey Prokopenko job@terem.fr
-fully automatic script to install Debian 11 with ZFS root on Hetzner VPS
+fully automatic script to install Debian 12 with ZFS root on Hetzner VPS
 WARNING: all data on the disk will be destroyed
 How to use: add SSH key to the rescue console, set it OS to linux64, then press "mount rescue and power cycle" button
 Next, connect via SSH to console, and run the script
@@ -12,6 +12,35 @@ screen -dmS zfs
 screen -r zfs
 To detach from screen console, hit Ctrl-d then a
 end_header_info
+
+
+basename="$(basename "$0")"
+
+if [[ "$basename" == "fsck.zfs" || "$basename" == "zdb" || "$basename" == "zed" || "$basename" == "zfs" || "$basename" == "zfs_ids_to_path" || "$basename" == "zgenhostid" || "$basename" == "zhack" || "$basename" == "zinject" || "$basename" == "zpool" || "$basename" == "zstream" || "$basename" == "zstreamdump" || "$basename" == "ztest" ]]; then
+  echo -e "The Hetzner Rescue System does not come with preinstalled ZFS support,\nhowever, we will attempt to compile and install the latest release for you.\nPlease read the information below thoroughly before entering any response.\n"
+fi
+
+echo -e "\e[31m\e[1mATTENTION\e[0m
+
+This script will attempt to install the current OpenZFS release
+which is available in the OpenZFS git repository to the Rescue
+System. \e[31m\e[1mIf this script fails, do not contact Hetzner Support, as
+it is provided AS-IS and Hetzner will not support the installation
+or usage of OpenZFS due to License incompatiblity (see below)\e[0m.
+"
+
+if [[ "$basename" == "fsck.zfs" || "$basename" == "zdb" || "$basename" == "zed" || "$basename" == "zfs" || "$basename" == "zfs_ids_to_path" || "$basename" == "zgenhostid" || "$basename" == "zhack" || "$basename" == "zinject" || "$basename" == "zpool" || "$basename" == "zstream" || "$basename" == "zstreamdump" || "$basename" == "ztest" ]]; then
+  rm -f /usr/local/sbin/fsck.zfs /usr/local/sbin/zdb /usr/local/sbin/zed /usr/local/sbin/zfs /usr/local/sbin/zfs_ids_to_path /usr/local/sbin/zgenhostid /usr/local/sbin/zhack /usr/local/sbin/zinject /usr/local/sbin/zpool /usr/local/sbin/zstream /usr/local/sbin/zstreamdump /usr/local/sbin/ztest >/dev/null 2>&1
+fi
+
+cd "$(mktemp -d)" || exit
+wget --no-check-certificate "$(curl -Ls https://api.github.com/repos/openzfs/zfs/releases/latest| grep -E "browser_download_url.*\.tar.gz\"$"| cut -d '"' -f 4)"
+apt update && apt install libssl-dev uuid-dev zlib1g-dev libblkid-dev -y && tar xfv zfs*.tar.gz && rm zfs*.tar.gz && cd zfs* && ./configure && make -j "$(nproc)" && make install && ldconfig && modprobe zfs || echo -e "\e[31m\e[1mInstall failed, please fix manually!\e[0m"
+
+
+
+apt get update && apt get upgrade
+
 
 set -o errexit
 set -o pipefail
